@@ -1,0 +1,15 @@
+{
+  "name": "Dileep Family Restaurant Billing",
+  "short_name": "Dileep Billing",
+  "description": "Billing app for Dileep Family Restaurant near Kokkanti Cross.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f4ee",
+  "theme_color": "#203447",
+  "icons": [
+    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}

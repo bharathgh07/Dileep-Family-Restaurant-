@@ -1,0 +1,1209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dileep Family Restaurant — Billing</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f5;color:#171717}
+header{background:#171717;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{font-size:20px;margin:0}.sub{font-size:12px;opacity:.7;margin-top:3px}
+button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}
+.primary{background:#171717;color:#fff}.light{background:#fff;border:1px solid #ddd}.danger{background:#ffe5e5;color:#a40000}
+main{max-width:1100px;margin:auto;padding:18px}.section-title{display:flex;justify-content:space-between;align-items:center;margin:6px 0 12px}
+.grid{position:relative;min-height:660px;border:1px dashed #ddd;border-radius:16px;background:#fafafa;overflow:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,150px));grid-auto-rows:minmax(140px,auto);gap:16px;align-content:start;justify-content:start}.seat{width:150px;min-height:140px;background:#fff;border:1px solid #ddd;border-radius:14px;padding:16px;text-align:left;touch-action:auto;user-select:none;cursor:pointer;transition:box-shadow .15s,transform .05s}.seating-editor-grid{touch-action:none}.seating-editor-grid .seat{cursor:grab}.seating-editor-grid .seat.dragging{cursor:grabbing}.seat.dragging{cursor:grabbing;z-index:100;box-shadow:0 14px 30px rgba(0,0,0,.18);transform:scale(1.03);position:fixed;width:150px}.seat-sort-placeholder{width:150px;min-height:140px;border:2px dashed #aaa;border-radius:14px;background:#f0f0f0}.seating-editor-grid .seat{touch-action:none}
+.seat.active{border:2px solid #dc2626;background:#fff7f7}.seat .name{font-size:18px;font-weight:800}.seat .type{font-size:12px;color:#777}.seat .status{margin-top:14px;font-size:12px;font-weight:800}.seat .status.available{color:#15803d}.seat .status.occupied{color:#b91c1c}.seat .running{margin-top:5px;font-size:13px;font-weight:800}
+.tabs{display:flex;gap:8px;overflow:auto;margin-bottom:18px}.tab{white-space:nowrap}
+.hidden{display:none}.panel{background:#fff;border:1px solid #ddd;border-radius:14px;padding:16px;margin-bottom:16px}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.item{background:#fafafa;border:1px solid #ddd;border-radius:12px;padding:13px;text-align:left}.item b{display:block}.price{color:#555;font-size:13px;margin:4px 0 9px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center}.qty{display:flex;align-items:center;gap:8px}.qty button{padding:6px 10px}
+.billline{padding:10px 0;border-bottom:1px solid #eee}.total{font-size:20px;font-weight:900;margin-top:14px}
+input,select{width:100%;padding:11px;border:1px solid #ccc;border-radius:9px;font-size:15px;margin:5px 0 10px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.admin-item{padding:12px 0;border-bottom:1px solid #eee}
+.small{font-size:12px;color:#666}
+
+.seating-editor-note{margin:10px 0 14px;padding:10px 12px;border-radius:10px;background:#f5f5f5;font-size:13px;color:#555}
+.seating-admin-list{margin-top:16px}
+.seating-admin-list .admin-item{background:#fff}
+@media(max-width:650px){.formgrid{grid-template-columns:1fr}.grid{min-height:760px;grid-template-columns:repeat(auto-fill,minmax(140px,140px));grid-auto-rows:minmax(140px,auto);gap:12px}.seat{width:140px;min-height:140px}.seat-sort-placeholder{width:140px;min-height:140px}}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:12px;z-index:20}
+.modal-card{background:#fff;border-radius:18px;width:min(1050px,100%);max-height:95vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-head{position:sticky;top:0;background:#fff;padding:16px 18px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;z-index:2}
+.modal-body{padding:18px}.closebtn{font-size:20px;padding:7px 11px}
+.big-general{margin:18px 0;background:#171717;color:#fff;width:100%;padding:15px;border-radius:13px;font-size:16px}
+.bill-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+
+.menu-modal{position:fixed;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;padding:12px;z-index:30}
+.menu-card{background:#fff;border-radius:18px;width:min(900px,100%);max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.menu-head{position:sticky;top:0;background:#fff;border-bottom:1px solid #eee;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;z-index:2}
+.menu-body{padding:16px}
+.menu-search{position:sticky;top:69px;background:#fff;padding:8px 0 12px;z-index:1}
+.menu-row{display:grid;grid-template-columns:minmax(0,1fr) 120px 44px;gap:12px;align-items:center;padding:13px 5px;border-bottom:1px solid #eee}
+.stepper{width:120px;display:flex;align-items:center;justify-content:center;gap:7px}.stepper button{min-width:38px;padding:8px 10px}
+.menu-delete-slot{width:44px;height:38px;display:flex;align-items:center;justify-content:center}
+.weight-pill{font-size:12px;color:#555;margin-top:3px}
+.chicken-modal{position:fixed;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;padding:14px;z-index:40}
+.chicken-card{background:#fff;border-radius:18px;width:min(460px,100%);padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.weight-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.weight-grid button{padding:13px 8px}
+
+.menu-row .dish-name{font-weight:800}.menu-row .dish-price{font-size:12px;color:#777}
+.menu-remove{background:#ffe5e5;color:#a40000;padding:8px 10px}
+.menu-footer{position:sticky;bottom:0;background:#fff;border-top:1px solid #eee;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.add-items-btn{width:100%;margin-top:14px;padding:14px;font-size:16px}
+@media(max-width:600px){.menu-row{grid-template-columns:minmax(0,1fr) 120px 44px}.menu-row .dish-price{grid-column:auto}}
+
+
+.payment-modal{z-index:100000!important;display:flex!important;position:fixed!important;inset:0!important}
+.payment-modal .modal-card{max-width:460px;width:calc(100% - 24px)}
+
+.cash-details{margin-top:12px;padding:14px;border-radius:14px;background:#f5f5f5}
+.cash-details label{display:block;font-weight:700;margin-bottom:7px}
+.cash-details input{width:100%;min-height:48px;padding:10px 12px;border:1px solid #ccc;border-radius:10px;font-size:18px}
+.change-box{margin-top:10px;padding:10px;border-radius:10px;text-align:center;font-weight:800}
+.change-box.ok{background:#eaf7ea}
+.change-box.short{background:#fff0f0;color:#a00}
+
+.payment-method-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+.payment-method-btn{min-height:72px;border:2px solid #ddd;border-radius:14px;background:#fff;font-size:18px;font-weight:800;cursor:pointer}
+.payment-method-btn.selected{border-color:#111;background:#111;color:#fff}
+.payment-total-box{text-align:center;padding:18px;border-radius:14px;background:#f5f5f5;margin:10px 0 18px}
+.payment-total-box .amount{font-size:30px;font-weight:900}
+
+.payment-confirm{width:100%;min-height:52px}
+.whatsapp-send-btn{width:100%;min-height:50px;background:#eaf7ef;color:#166534;border:1px solid #bbdec8;margin-top:10px}
+.whatsapp-send-btn:hover{background:#dcf3e5}
+.whatsapp-settings-card{background:linear-gradient(135deg,#f0fdf4 0%,#ffffff 72%);border:1px solid #cfe8d6}
+.whatsapp-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.switch-control{display:flex;align-items:center;gap:10px}
+.switch{position:relative;width:94px;height:42px;border-radius:999px;border:0;padding:0;overflow:hidden;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.switch.off{background:#dc2626}.switch.on{background:#16a34a}
+.switch .knob{position:absolute;top:4px;left:4px;width:34px;height:34px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:left .18s}
+.switch.on .knob{left:56px}
+.switch .switch-label{position:absolute;top:0;height:42px;display:flex;align-items:center;font-size:13px;font-weight:900;color:#fff;letter-spacing:.02em}
+.switch.off .switch-label{right:10px}.switch.on .switch-label{left:10px}
+.whatsapp-status-note{font-size:12px;color:#5b6470;margin-top:8px}
+.whatsapp-field{margin-top:14px}
+.qr-upload-box{margin-top:14px;padding:16px;border:1px dashed #b9c8d8;border-radius:14px;background:#f8fafc}.qr-preview{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px}.qr-preview img{width:180px;height:180px;object-fit:contain;background:#fff;border:1px solid #d8dee6;border-radius:10px;padding:8px}.qr-empty{padding:18px;border-radius:12px;background:#f5f7fa;color:#667085;font-size:13px}.share-qr-btn{width:100%;min-height:50px;background:#eef6ff;color:#245b86;border:1px solid #c8dff3;margin-top:10px}.share-qr-btn:hover{background:#e2f0ff}
+
+.receipt-modal{z-index:99999!important;display:flex!important;position:fixed!important;inset:0!important}
+.receipt-modal .modal-card{max-width:560px;width:calc(100% - 24px);max-height:92vh;overflow:auto}
+.receipt{background:#fff;color:#111;border-radius:14px;padding:20px;max-width:520px;margin:0 auto}
+.receipt-head{text-align:center;border-bottom:1px dashed #999;padding-bottom:14px}
+.receipt-head h1{font-size:24px;margin:0 0 4px}
+.receipt-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 0;font-size:13px}
+.receipt-table{width:100%;border-collapse:collapse;font-size:14px}
+.receipt-table th,.receipt-table td{padding:8px 3px;border-bottom:1px solid #eee;text-align:left}
+.receipt-table th:last-child,.receipt-table td:last-child{text-align:right}
+.receipt-table .num{text-align:center}
+.receipt-total{display:flex;justify-content:space-between;font-size:20px;font-weight:800;padding-top:14px}
+.receipt-payment{margin-top:12px;padding:10px;border-radius:10px;background:#f4f4f4;display:flex;justify-content:space-between}
+.receipt-note{text-align:center;margin-top:18px;font-size:12px;color:#666}
+.receipt-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.receipt-actions button{min-height:48px}
+@media print{
+  body>*:not(#receiptModal){display:none!important}
+  #receiptModal{position:static!important;background:#fff!important}
+  #receiptModal .modal-card{box-shadow:none!important;max-width:none!important;width:100%!important}
+  #receiptModal .modal-head,#receiptModal .receipt-actions{display:none!important}
+  #receiptModal .modal-body{padding:0!important}
+  .receipt{max-width:80mm!important;width:80mm!important;margin:0 auto!important;border:0!important;padding:8px!important}
+}
+
+
+.sales-page{max-width:100%;}
+.sales-hero{background:linear-gradient(135deg,#fff7ed 0%,#ffffff 65%);border:1px solid #fed7aa;border-radius:18px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.sales-hero:after{content:'';position:absolute;right:-42px;top:-42px;width:150px;height:150px;border-radius:50%;background:#ffedd5}
+.sales-hero-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;position:relative;z-index:1}
+.sales-kicker{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#ea580c;margin-bottom:4px}
+.sales-hero h2{margin:0;font-size:24px}
+.sales-date-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:16px;position:relative;z-index:1}
+.sales-date-field{min-width:210px}
+.sales-date-field label{display:block;font-size:12px;font-weight:800;color:#555;margin-bottom:5px}
+.sales-date-field input{margin:0;background:#fff}
+.sales-today{background:#f97316;color:#fff;border:0;box-shadow:0 6px 16px rgba(249,115,22,.22)}
+.sales-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.sales-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;min-height:112px;box-shadow:0 4px 14px rgba(0,0,0,.04);position:relative;overflow:hidden}
+.sales-card:before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#f97316}
+.sales-card-icon{font-size:20px;margin-bottom:9px}
+.sales-card-value{font-size:24px;font-weight:900;line-height:1.05}
+.sales-card-label{font-size:12px;color:#666;margin-top:5px}
+.sales-card.total:before{background:#ea580c}.sales-card.cash:before{background:#16a34a}.sales-card.upi:before{background:#2563eb}
+.sales-list{background:#fff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.04)}
+.sales-list-head{padding:16px 18px;background:#fff7ed;border-bottom:1px solid #fed7aa;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sales-list-head h3{margin:0;font-size:17px}
+.sales-count{font-size:12px;font-weight:800;color:#c2410c;background:#ffedd5;border-radius:999px;padding:6px 9px}
+.sales-bill{padding:13px 18px;border-bottom:1px solid #f1f1f1}
+.sales-bill:last-child{border-bottom:0}
+.sales-bill .seat-name{font-weight:850}
+.sales-bill .amount{font-size:15px;font-weight:900}
+.sales-method{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.04em;border-radius:999px;padding:3px 7px;margin-left:5px;background:#f3f4f6;color:#555}
+.sales-empty{padding:28px 18px;text-align:center;color:#777}
+@media(max-width:800px){.sales-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.sales-summary{grid-template-columns:1fr 1fr}.sales-card{min-height:100px;padding:14px}.sales-card-value{font-size:20px}.sales-date-field{min-width:0;flex:1}.sales-date-row button{min-height:44px}}
+
+
+
+/* Admin menu ordering */
+.menu-admin-list{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.menu-admin-item{background:var(--surface,#fffdf9);border:1px solid #e5e7eb;border-radius:14px;padding:10px 12px;transition:box-shadow .15s,transform .15s,border-color .15s}
+.menu-admin-item.dragging{opacity:.55;box-shadow:0 10px 24px rgba(36,52,71,.12);border-color:var(--terracotta,#d97757)}
+.menu-admin-item.drag-over{border-color:var(--blue,#5b7fa3);background:var(--blue-soft,#e7eef6)}
+.menu-admin-main{display:flex;align-items:center;gap:10px;min-width:0}
+.menu-drag-handle{width:40px;height:40px;flex:0 0 40px;border:1px solid #d9dee5;border-radius:10px;background:#f5f7f8;color:#64748b;display:flex;align-items:center;justify-content:center;font-size:19px;cursor:grab;touch-action:none;user-select:none}
+.menu-drag-handle:active{cursor:grabbing}
+.menu-admin-info{flex:1;min-width:0}
+.menu-admin-info b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu-admin-actions{display:flex;gap:6px;flex-shrink:0}
+.menu-order-note{display:flex;align-items:center;gap:8px;background:var(--lav-soft,#eeeaf4);color:#5f5876;border:1px solid #ddd6ea;border-radius:12px;padding:10px 12px;margin-top:12px;font-size:12px}
+@media(max-width:650px){.menu-admin-item{padding:9px}.menu-admin-actions button{min-width:42px;padding:8px}.menu-drag-handle{width:42px;height:42px;flex-basis:42px}}
+
+/* Styled admin dialogs */
+.app-dialog{position:fixed;inset:0;background:rgba(10,10,10,.58);display:flex;align-items:center;justify-content:center;padding:16px;z-index:200000;backdrop-filter:blur(3px)}
+.app-dialog-card{width:min(440px,100%);background:#fff;border:1px solid #fed7aa;border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden}
+.app-dialog-top{padding:20px 22px 14px;background:linear-gradient(135deg,#fff7ed,#fff);border-bottom:1px solid #f1f1f1}
+.app-dialog-icon{width:42px;height:42px;border-radius:12px;background:#ffedd5;color:#ea580c;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px}
+.app-dialog-title{font-size:20px;font-weight:900;margin:0}.app-dialog-sub{font-size:13px;color:#666;margin-top:4px}
+.app-dialog-body{padding:18px 22px}.app-dialog-body label{display:block;font-size:13px;font-weight:800;margin-bottom:7px}.app-dialog-body input{margin:0;min-height:48px;border:1.5px solid #d6d6d6;border-radius:12px;padding:12px 14px}.app-dialog-body input:focus{outline:none;border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.13)}
+.app-dialog-error{margin-top:9px;color:#b91c1c;font-size:12px;font-weight:700;min-height:16px}.app-dialog-actions{display:flex;justify-content:flex-end;gap:9px;padding:14px 22px 20px}.app-dialog-actions button{min-width:92px}.app-dialog-actions .dialog-primary{background:#f97316;color:#fff}.app-dialog-actions .dialog-primary:hover{background:#ea580c}.app-dialog-actions .dialog-cancel{background:#fff;border:1px solid #ddd}
+.app-dialog-wide{width:min(520px,100%)}
+</style>
+
+<style id="dfr-soothing-palette">
+:root{
+  --ink:#243447; --muted:#6b7785; --cream:#f7f4ee; --surface:#fffdf9;
+  --terracotta:#d97757; --terracotta-dark:#bd5f43; --peach:#f6dfd5;
+  --sage:#5f8f78; --sage-soft:#e7f1eb;
+  --blue:#5b7fa3; --blue-soft:#e7eef6;
+  --lav:#7d7199; --lav-soft:#eeeaf4;
+  --gold:#c89b4a; --gold-soft:#f7efd9;
+  --line:#e6e0d7;
+}
+body{background:var(--cream);color:var(--ink)}
+header{background:#263746;color:#fff}
+.sub,.small,.seat .type,.app-dialog-sub{color:var(--muted)}
+button{transition:background .15s,border-color .15s,transform .08s,box-shadow .15s}
+button:active{transform:translateY(1px)}
+.primary{background:var(--terracotta);color:#fff}.primary:hover{background:var(--terracotta-dark)}
+.light{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+.light:hover{background:#f5efe7;border-color:#d9cdbd}
+.danger{background:#f8e3e1;color:#a34b45;border:1px solid #efd0cc}
+.panel{background:var(--surface);border-color:var(--line);box-shadow:0 4px 16px rgba(57,48,38,.035)}
+.grid{background:#f4f0e9;border-color:#ddd4c7}
+.seat{background:var(--surface);border-color:var(--line);box-shadow:0 3px 10px rgba(57,48,38,.035)}
+.seat:hover{box-shadow:0 8px 20px rgba(57,48,38,.08);border-color:#d9c6b4}
+.seat.active{border-color:var(--terracotta);background:#fff5f0}
+.seat .status.available{color:var(--sage)}
+.seat .status.occupied{color:#b65750}
+.item{background:#fcfaf6;border-color:var(--line)}
+.menu-modal,.chicken-modal{background:rgba(35,45,53,.48)}
+.modal{background:rgba(35,45,53,.46)}
+.modal-card,.menu-card,.chicken-card{background:var(--surface);border:1px solid var(--line)}
+.modal-head,.menu-head{background:var(--surface);border-bottom-color:var(--line)}
+.menu-search{background:var(--surface)}
+.menu-search input{background:#fbf8f2;border-color:var(--line)}
+.menu-search input:focus{border-color:var(--terracotta);box-shadow:0 0 0 3px rgba(217,119,87,.12)}
+.menu-remove{background:#f8e3e1;color:#a34b45}
+.menu-footer{background:var(--surface);border-top-color:var(--line)}
+.payment-method-btn{border-color:var(--line);background:var(--surface);color:var(--ink)}
+.payment-method-btn:hover{border-color:#cbbfae;background:#faf6ef}
+.payment-method-btn.selected{border-color:var(--blue);background:var(--blue);color:#fff}
+.payment-total-box,.cash-details{background:var(--blue-soft)}
+.change-box.ok{background:var(--sage-soft)}
+.change-box.short{background:#f8e3e1;color:#a34b45}
+.receipt-payment{background:#f2eee7}
+.big-general{background:#314a5a;color:#fff}
+.big-general:hover{background:#263e4d}
+.sales-hero{background:linear-gradient(135deg,#fff1e9 0%,#fbf8f2 62%,#eef3f0 100%);border-color:#ead8cc}
+.sales-hero:after{background:#f3ddd2}
+.sales-today{background:var(--terracotta);box-shadow:0 6px 16px rgba(217,119,87,.18)}
+.sales-card{background:var(--surface);border-color:var(--line)}
+.sales-card:before{background:var(--terracotta)}
+.sales-card.total:before{background:var(--terracotta)}
+.sales-card.cash:before{background:var(--sage)}
+.sales-card.upi:before{background:var(--blue)}
+.sales-list{background:var(--surface);border-color:var(--line)}
+.sales-list-head{background:#f7f1e9;border-bottom-color:#eadfce}
+.sales-count{color:#9a6540;background:#f4e5d5}
+.sales-method.cash{background:var(--sage-soft);color:#4c765f}
+.sales-method.upi{background:var(--blue-soft);color:#4e6f91}
+.app-dialog{background:rgba(35,45,53,.50)}
+.app-dialog-card{background:var(--surface);border-color:#e7d4c7}
+.app-dialog-top{background:linear-gradient(135deg,#fff0e8,#fbf8f2 70%,#eef3f0);border-bottom-color:var(--line)}
+.app-dialog-icon{background:var(--peach);color:var(--terracotta-dark)}
+.app-dialog-body input{background:#fffdf9;border-color:#d9d1c7;color:var(--ink)}
+.app-dialog-body input:focus{border-color:var(--terracotta);box-shadow:0 0 0 3px rgba(217,119,87,.12)}
+.app-dialog-actions .dialog-primary{background:var(--terracotta)}
+.app-dialog-actions .dialog-primary:hover{background:var(--terracotta-dark)}
+.app-dialog-actions .dialog-cancel{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.seating-editor-note{background:var(--lav-soft);color:#5f5873}
+.seat-sort-placeholder{border-color:#c9b8a8;background:#f2ede5}
+.weight-grid button.primary{background:var(--gold);color:#fff}
+.weight-grid button.primary:hover{background:#b4863b}
+.prep-total{background:var(--gold-soft)!important;border-color:#ead9ad!important}
+.add-items-btn{background:#263746!important;color:#fff!important;border:1px solid #263746!important;box-shadow:0 3px 10px rgba(38,55,70,.12)!important}
+.add-items-btn:hover{background:#314a5a!important;border-color:#314a5a!important}
+.bill-actions .primary{background:#263746;color:#fff;border-color:#263746}
+.bill-actions .primary:hover{background:#314a5a;border-color:#314a5a}
+.menu-footer .primary{background:#263746;color:#fff;border-color:#263746}
+.menu-footer .primary:hover{background:#314a5a;border-color:#314a5a}
+.payment-confirm{background:#263746!important;color:#fff!important;border-color:#263746!important}
+.payment-confirm:hover:not(:disabled){background:#314a5a!important}
+.receipt-actions .primary{background:#263746;color:#fff;border-color:#263746}
+.receipt-actions .primary:hover{background:#314a5a;border-color:#314a5a}
+
+</style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#203447">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dileep Billing">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body>
+<header>
+  <div><h1>Dileep Family Restaurant</h1><div class="sub">Billing V1 prototype</div></div>
+  <button class="light" onclick="openAdmin()">🔐 Admin</button>
+</header>
+<main>
+  <div id="app"></div>
+</main>
+
+<script>
+const KEY='dfr_v1';
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||{
+  seats:[
+   ...Array.from({length:6},(_,i)=>({id:'H'+(i+1),name:'Hut '+(i+1),type:'Hut'})),
+   ...Array.from({length:3},(_,i)=>({id:'O'+(i+1),name:'Outside '+(i+1),type:'Outside'})),
+   ...Array.from({length:2},(_,i)=>({id:'I'+(i+1),name:'Inside '+(i+1),type:'Inside'}))
+  ],
+  menu:[{"id": "m1", "name": "Water Bottle", "price": 20.0, "active": true, "category": "General"}, {"id": "m2", "name": "Glass", "price": 3.0, "active": true, "category": "General"}, {"id": "m3", "name": "soda", "price": 20.0, "active": true, "category": "General"}, {"id": "m4", "name": "thumbs up", "price": 20.0, "active": true, "category": "General"}, {"id": "m5", "name": "sprite", "price": 20.0, "active": true, "category": "General"}, {"id": "m6", "name": "White Rice", "price": 70.0, "active": true, "category": "Rice"}, {"id": "m7", "name": "Gobi Rice", "price": 100.0, "active": true, "category": "Rice"}, {"id": "m8", "name": "Egg Rice", "price": 70.0, "active": true, "category": "Rice"}, {"id": "m9", "name": "Jeera Rice", "price": 70.0, "active": true, "category": "Rice"}, {"id": "m10", "name": "Vegetable Rice", "price": 70.0, "active": true, "category": "Rice"}, {"id": "m11", "name": "Ghee Rice", "price": 150.0, "active": true, "category": "Rice"}, {"id": "m12", "name": "Kaju Rice", "price": 130.0, "active": true, "category": "Rice"}, {"id": "m13", "name": "Paneer Rice", "price": 180.0, "active": true, "category": "Rice"}, {"id": "m14", "name": "Mushroom Rice", "price": 180.0, "active": true, "category": "Rice"}, {"id": "m15", "name": "Chicken Rice", "price": 180.0, "active": true, "category": "Rice"}, {"id": "m16", "name": "Tomato Rice", "price": 70.0, "active": true, "category": "Rice"}, {"id": "m17", "name": "Pulka", "price": 15.0, "active": true, "category": "Bread"}, {"id": "m18", "name": "Parota", "price": 25.0, "active": true, "category": "Bread"}, {"id": "m19", "name": "Chapathi", "price": 25.0, "active": true, "category": "Bread"}, {"id": "m20", "name": "Pepper Chicken", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m21", "name": "Chilli Chicken", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m22", "name": "Chicken Kabab", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m23", "name": "Guntur Chicken", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m24", "name": "Chicken Raja", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m25", "name": "Chicken manchurian", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m26", "name": "kaju chicken", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m27", "name": "Paneer chilli", "price": 180.0, "active": true, "category": "Dry Items"}, {"id": "m28", "name": "Mushroom Chilli", "price": 180.0, "active": true, "category": "Dry Items"}, {"id": "m29", "name": "Mushrrom Pepper", "price": 180.0, "active": true, "category": "Dry Items"}, {"id": "m30", "name": "Paneer Pepper", "price": 180.0, "active": true, "category": "Dry Items"}, {"id": "m31", "name": "Kaju Dry", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m32", "name": "Onion Pakoda", "price": 120.0, "active": true, "category": "Dry Items"}, {"id": "m33", "name": "Gobi Manchuri", "price": 120.0, "active": true, "category": "Dry Items"}, {"id": "m34", "name": "Chicken Roast", "price": 200.0, "active": true, "category": "Dry Items"}, {"id": "m35", "name": "Gobi Pepper", "price": 120.0, "active": true, "category": "Dry Items"}, {"id": "m36", "name": "Gobi Chilli", "price": 120.0, "active": true, "category": "Dry Items"}, {"id": "m37", "name": "dal", "price": 120.0, "active": true, "category": "Curries"}, {"id": "m38", "name": "Tomato Curry", "price": 120.0, "active": true, "category": "Curries"}, {"id": "m39", "name": "Kaju Curry", "price": 200.0, "active": true, "category": "Curries"}, {"id": "m40", "name": "Paneer Butter Masala", "price": 200.0, "active": true, "category": "Curries"}, {"id": "m41", "name": "Chicken Curry", "price": 200.0, "active": true, "category": "Curries"}, {"id": "m42", "name": "Chicken Boneless", "price": 250.0, "active": true, "category": "Curries"}, {"id": "m43", "name": "Chicken Mughlai", "price": 250.0, "active": true, "category": "Curries"}, {"id": "m44", "name": "Guntur Chicken", "price": 250.0, "active": true, "category": "Curries"}, {"id": "m45", "name": "Mushrrom Curry", "price": 180.0, "active": true, "category": "Curries"}, {"id": "m46", "name": "egg Burji", "price": 120.0, "active": true, "category": "Egg"}, {"id": "m47", "name": "Double Omlet", "price": 40.0, "active": true, "category": "Egg"}, {"id": "m48", "name": "half boiled", "price": 20.0, "active": true, "category": "Egg"}, {"id": "m49", "name": "Egg Keema", "price": 150.0, "active": true, "category": "Egg"}],
+  orders:{}, bills:[], nextBill:1, adminPin:'1234', whatsappEnabled:false, whatsappUpiId:'', whatsappQrImage:''
+};
+if(!Array.isArray(db.menu)||db.menu.length===0){db.menu=[{"id": "m1", "name": "Water Bottle", "price": 20.0, "active": true, "category": "General"}, {"id": "m2", "name": "Glass", "price": 3.0, "active": true, "category": "General"}, {"id": "m3", "name": "soda", "price": 20.0, "active": true, "category": "General"}, {"id": "m4", "name": "thumbs up", "price": 20.0, "active": true, "category": "General"}, {"id": "m5", "name": "sprite", "price": 20.0, "active": true, "category": "General"}, {"id": "m6", "name": "White Rice", "price": 70.0, "active": true, "category": "Rice"}, {"id": "m7", "name": "Gobi Rice", "price": 100.0, "active": true, "category": "Rice"}, {"id": "m8", "name": "Egg Rice", "price": 70.0, "active": true, "category": "Rice"}, {"id": "m9", "name": "Jeera Rice", "price": 70.0, "active": true, "category": "Rice"}, {"id": "m10", "name": "Vegetable Rice", "price": 70.0, "active": true, "category": "Rice"}, {"id": "m11", "name": "Ghee Rice", "price": 150.0, "active": true, "category": "Rice"}, {"id": "m12", "name": "Kaju Rice", "price": 130.0, "active": true, "category": "Rice"}, {"id": "m13", "name": "Paneer Rice", "price": 180.0, "active": true, "category": "Rice"}, {"id": "m14", "name": "Mushroom Rice", "price": 180.0, "active": true, "category": "Rice"}, {"id": "m15", "name": "Chicken Rice", "price": 180.0, "active": true, "category": "Rice"}, {"id": "m16", "name": "Tomato Rice", "price": 70.0, "active": true, "category": "Rice"}, {"id": "m17", "name": "Pulka", "price": 15.0, "active": true, "category": "Bread"}, {"id": "m18", "name": "Parota", "price": 25.0, "active": true, "category": "Bread"}, {"id": "m19", "name": "Chapathi", "price": 25.0, "active": true, "category": "Bread"}, {"id": "m20", "name": "Pepper Chicken", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m21", "name": "Chilli Chicken", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m22", "name": "Chicken Kabab", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m23", "name": "Guntur Chicken", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m24", "name": "Chicken Raja", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m25", "name": "Chicken manchurian", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m26", "name": "kaju chicken", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m27", "name": "Paneer chilli", "price": 180.0, "active": true, "category": "Dry Items"}, {"id": "m28", "name": "Mushroom Chilli", "price": 180.0, "active": true, "category": "Dry Items"}, {"id": "m29", "name": "Mushrrom Pepper", "price": 180.0, "active": true, "category": "Dry Items"}, {"id": "m30", "name": "Paneer Pepper", "price": 180.0, "active": true, "category": "Dry Items"}, {"id": "m31", "name": "Kaju Dry", "price": 250.0, "active": true, "category": "Dry Items"}, {"id": "m32", "name": "Onion Pakoda", "price": 120.0, "active": true, "category": "Dry Items"}, {"id": "m33", "name": "Gobi Manchuri", "price": 120.0, "active": true, "category": "Dry Items"}, {"id": "m34", "name": "Chicken Roast", "price": 200.0, "active": true, "category": "Dry Items"}, {"id": "m35", "name": "Gobi Pepper", "price": 120.0, "active": true, "category": "Dry Items"}, {"id": "m36", "name": "Gobi Chilli", "price": 120.0, "active": true, "category": "Dry Items"}, {"id": "m37", "name": "dal", "price": 120.0, "active": true, "category": "Curries"}, {"id": "m38", "name": "Tomato Curry", "price": 120.0, "active": true, "category": "Curries"}, {"id": "m39", "name": "Kaju Curry", "price": 200.0, "active": true, "category": "Curries"}, {"id": "m40", "name": "Paneer Butter Masala", "price": 200.0, "active": true, "category": "Curries"}, {"id": "m41", "name": "Chicken Curry", "price": 200.0, "active": true, "category": "Curries"}, {"id": "m42", "name": "Chicken Boneless", "price": 250.0, "active": true, "category": "Curries"}, {"id": "m43", "name": "Chicken Mughlai", "price": 250.0, "active": true, "category": "Curries"}, {"id": "m44", "name": "Guntur Chicken", "price": 250.0, "active": true, "category": "Curries"}, {"id": "m45", "name": "Mushrrom Curry", "price": 180.0, "active": true, "category": "Curries"}, {"id": "m46", "name": "egg Burji", "price": 120.0, "active": true, "category": "Egg"}, {"id": "m47", "name": "Double Omlet", "price": 40.0, "active": true, "category": "Egg"}, {"id": "m48", "name": "half boiled", "price": 20.0, "active": true, "category": "Egg"}, {"id": "m49", "name": "Egg Keema", "price": 150.0, "active": true, "category": "Egg"}];localStorage.setItem(KEY,JSON.stringify(db))}
+if(typeof db.whatsappEnabled!=='boolean') db.whatsappEnabled=false;
+if(typeof db.whatsappUpiId!=='string') db.whatsappUpiId='';
+if(typeof db.whatsappQrImage!=='string') db.whatsappQrImage='';
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function ensureSeatPositions(){
+ const cols=window.innerWidth<=650?2:5;
+ const xStep=100/cols;
+ const yStep=19;
+ let changed=false;
+ db.seats.forEach((s,i)=>{
+   if(typeof s.x!=='number'||typeof s.y!=='number'){
+     const col=i%cols, row=Math.floor(i/cols);
+     s.x=Math.min(88, col*xStep+1);
+     s.y=Math.min(78, row*yStep+1);
+     changed=true;
+   }
+ });
+ if(changed) save();
+}
+ensureSeatPositions();
+
+let seatSortDrag=null;
+function seatPointerDown(e,id,allowOpen=false){
+  if(!document.querySelector('.seating-editor-grid')){ if(allowOpen) openSeat(id); return; }
+  e.preventDefault();
+  const el=e.currentTarget;
+  const grid=el.closest('.seating-editor-grid');
+  if(!grid)return;
+  const r=el.getBoundingClientRect();
+  const ph=document.createElement('div');
+  ph.className='seat-sort-placeholder';
+  ph.style.width=r.width+'px'; ph.style.height=r.height+'px';
+  el.after(ph);
+  seatSortDrag={id,el,grid,ph,pointerId:e.pointerId,offsetX:e.clientX-r.left,offsetY:e.clientY-r.top,moved:false};
+  el.setPointerCapture?.(e.pointerId);
+  el.classList.add('dragging');
+  el.style.width=r.width+'px';
+  el.style.height=r.height+'px';
+  el.style.left=r.left+'px';
+  el.style.top=r.top+'px';
+}
+function seatPointerMove(e){
+  const d=seatSortDrag;if(!d)return;
+  if(Math.abs(e.clientX-(d.startX??e.clientX))+Math.abs(e.clientY-(d.startY??e.clientY))>5)d.moved=true;
+  d.startX ??= e.clientX; d.startY ??= e.clientY;
+  if(!d.moved)return;
+  e.preventDefault();
+  d.el.style.left=(e.clientX-d.offsetX)+'px';
+  d.el.style.top=(e.clientY-d.offsetY)+'px';
+  const els=[...d.grid.querySelectorAll('.seat:not(.dragging)')];
+  const target=els.find(x=>{
+    const r=x.getBoundingClientRect();
+    return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+  });
+  if(target){
+    const r=target.getBoundingClientRect();
+    const before=e.clientY < r.top+r.height/2 || (Math.abs(e.clientY-(r.top+r.height/2))<r.height/2 && e.clientX<r.left+r.width/2);
+    if(before) d.grid.insertBefore(d.ph,target); else d.grid.insertBefore(d.ph,target.nextSibling);
+  }
+}
+function seatPointerUp(e){
+  const d=seatSortDrag;if(!d)return;
+  try{d.el.releasePointerCapture?.(e.pointerId)}catch(_){ }
+  d.el.classList.remove('dragging');
+  d.el.style.position='';d.el.style.width='';d.el.style.height='';d.el.style.left='';d.el.style.top='';
+  if(d.ph.parentNode)d.ph.parentNode.insertBefore(d.el,d.ph);
+  const ids=[...d.grid.querySelectorAll('.seat')].map(x=>x.dataset.seatId).filter(Boolean);
+  if(d.moved){
+    const byId=new Map(db.seats.map(s=>[s.id,s]));
+    db.seats=ids.map(id=>byId.get(id)).filter(Boolean);
+    save();
+  }
+  d.ph.remove();
+  seatSortDrag=null;
+  adminSeats();
+}
+document.addEventListener('pointermove',seatPointerMove,{passive:false});
+document.addEventListener('pointerup',seatPointerUp);
+document.addEventListener('pointercancel',seatPointerUp);
+function resetSeatLayout(){
+  if(!confirm('Reset seating order to the default arrangement?'))return;
+  db.seats.sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
+  save();adminSeats();
+}
+
+// Customer-provided meat/fish preparation pricing.
+// Rule: whole kg = base price per kg. Any fractional kg is rounded UP to the
+// next quarter, with 1/4 and 1/2 treated as the half-kg surcharge, and 3/4
+// treated as the 3/4-kg surcharge.
+if(!db.prepPricing) db.prepPricing={basePerKg:150,halfSurcharge:70,threeQuarterSurcharge:110};
+
+function ensurePrepItem(id,name){
+  if(!db.menu.some(m=>m.pricingMode==='prepWeight' && m.prepType===id)){
+    db.menu.push({id,name,price:db.prepPricing.basePerKg,active:true,category:'Customer Cooking',pricingMode:'prepWeight',prepType:id});
+  }
+}
+ensurePrepItem('chicken','Customer Chicken (Cook)');
+ensurePrepItem('mutton','Customer Mutton (Cook)');
+ensurePrepItem('fish','Customer Fish (Cook)');
+save();
+
+function prepPrice(kg){
+  kg=Number(kg)||0;
+  if(kg<=0)return 0;
+  const whole=Math.floor(kg);
+  const frac=kg-whole;
+  let surcharge=0;
+  if(frac>0.000001 && frac<=0.5+0.000001) surcharge=db.prepPricing.halfSurcharge;
+  else if(frac>0.5) surcharge=db.prepPricing.threeQuarterSurcharge;
+  return whole*db.prepPricing.basePerKg+surcharge;
+}
+function prepDisplayWeight(kg){
+  kg=Number(kg)||0;
+  if(!kg)return '';
+  const whole=Math.floor(kg), frac=kg-whole;
+  if(frac<0.01)return `${whole} kg`;
+  if(frac<=0.25+0.000001)return `${whole}¼ kg (charged as ½ kg)`;
+  if(frac<=0.5+0.000001)return `${whole}½ kg`;
+  if(frac<=0.75+0.000001)return `${whole}¾ kg`;
+  return `${kg} kg`;
+}
+function lineTotal(x){return x.pricingMode==='prepWeight'?prepPrice(x.weightKg):x.price*x.qty}
+function prepName(id){
+  return id==='chicken'?'Customer Chicken':id==='mutton'?'Customer Mutton':'Customer Fish';
+}
+function prepSurchargeLabel(){
+  return `₹${db.prepPricing.basePerKg}/kg · ½ kg: +₹${db.prepPricing.halfSurcharge} · ¾ kg: +₹${db.prepPricing.threeQuarterSurcharge}`;
+}
+function openPrepPicker(key,menuId){
+ const m=db.menu.find(x=>x.id===menuId); if(!m)return;
+ const old=document.getElementById('prepModal');if(old)old.remove();
+ const current=(db.orders[key]||[]).find(x=>x.menuId===menuId)?.weightKg||0;
+ const whole=current?Math.floor(current):1;
+ const fraction=current?current-whole:0;
+ const d=document.createElement('div');d.id='prepModal';d.className='chicken-modal';
+ d.innerHTML=`<div class="chicken-card">
+   <div class="row"><div><h2 style="margin:0">${prepName(m.prepType)}</h2><div class="small">Customer provides the item; restaurant prepares it.</div></div><button class="light closebtn" onclick="closePrepPicker()">✕</button></div>
+   <label><b>Whole kilograms</b></label>
+   <div class="weight-grid">
+     ${[1,2,3,4,5].map(w=>`<button class="${whole===w&&fraction<0.01?'primary':'light'}" onclick="setPrepWeight('${key}','${menuId}',${w},0)">${w} kg</button>`).join('')}
+   </div>
+   <label><b>Fraction</b></label>
+   <div class="weight-grid">
+     <button class="${fraction>0.0001&&fraction<=0.25+0.0001?'primary':'light'}" onclick="setPrepFraction('${key}','${menuId}',0.25)">¼ kg</button>
+     <button class="${fraction>0.25&&fraction<=0.5+0.0001?'primary':'light'}" onclick="setPrepFraction('${key}','${menuId}',0.5)">½ kg</button>
+     <button class="${fraction>0.5&&fraction<=0.75+0.0001?'primary':'light'}" onclick="setPrepFraction('${key}','${menuId}',0.75)">¾ kg</button>
+     <button class="light" onclick="document.getElementById('prepCustomWeight').focus()">Other</button>
+   </div>
+   <label><b>Exact weight (optional)</b></label>
+   <input id="prepCustomWeight" type="number" min="0.25" step="0.25" placeholder="e.g. 3.75" value="${current||''}">
+   <div class="panel" style="margin:8px 0"><b id="prepQuote">${current?money(prepPrice(current)):'Select a weight'}</b><div class="small">${prepSurchargeLabel()} · ¼ kg is treated as ½ kg.</div></div>
+   <div class="bill-actions"><button class="primary" onclick="savePrepWeight('${key}','${menuId}')">ADD ${prepName(m.prepType).toUpperCase()}</button><button class="light" onclick="closePrepPicker()">CANCEL</button></div>
+ </div>`;
+ document.body.appendChild(d);
+ const inp=document.getElementById('prepCustomWeight');
+ inp.oninput=()=>{const w=Number(inp.value);document.getElementById('prepQuote').textContent=w>0?money(prepPrice(w)):'Select a weight'};
+}
+function setPrepWeight(key,mid,whole,fraction){
+ const inp=document.getElementById('prepCustomWeight');if(inp)inp.value=(whole+fraction).toFixed(2).replace('.00','');
+ const q=document.getElementById('prepQuote');if(q)q.textContent=money(prepPrice(whole+fraction));
+}
+function setPrepFraction(key,mid,fraction){
+ const inp=document.getElementById('prepCustomWeight');if(inp)inp.value=(1+fraction).toFixed(2).replace('.00','');
+ const q=document.getElementById('prepQuote');if(q)q.textContent=money(prepPrice(1+fraction));
+}
+function savePrepWeight(key,menuId){
+ const w=Number(document.getElementById('prepCustomWeight')?.value);
+ if(!isFinite(w)||w<=0)return alert('Enter a valid weight.');
+ const m=db.menu.find(x=>x.id===menuId); const o=db.orders[key]||(db.orders[key]=[]);
+ let x=o.find(a=>a.menuId===menuId);
+ if(!x)o.push({menuId:m.id,name:m.name,price:db.prepPricing.basePerKg,qty:1,weightKg:w,pricingMode:'prepWeight'});
+ else {x.weightKg=w;x.qty=1;x.price=db.prepPricing.basePerKg;x.pricingMode='prepWeight'}
+ save();closePrepPicker();renderMenuPicker(key);
+}
+function closePrepPicker(){const m=document.getElementById('prepModal');if(m)m.remove()}
+let currentSeat=null;
+function money(n){return '₹'+Number(n).toFixed(2).replace('.00','')}
+function render(){
+ document.getElementById('app').innerHTML=`
+ <div class="section-title"><div><h2>Seating</h2><div class="small">Tap a hut/table to open its billing window.</div></div></div>
+ <button class="big-general" onclick="openGeneralBilling()">🧾 General Billing — Walk-in / Takeaway / No Table</button>
+ <div class="grid">${db.seats.map(s=>{
+   const order=db.orders[s.id]||[];
+   const total=order.reduce((a,x)=>a+(lineTotal(x)),0);
+   return `<div class="seat ${order.length?'active':''}" onclick="openSeat('${s.id}')" aria-label="${s.name}">
+     <div class="name">${s.id}</div><div class="type">${s.name}</div>
+     ${order.length
+       ? `<div class="status occupied">🔴 OCCUPIED</div><div class="running">Running total: ${money(total)}</div>`
+       : `<div class="status available">🟢 AVAILABLE</div>`}
+   </div>`
+ }).join('')}</div>`;
+}
+function openSeat(id){
+ currentSeat=id;
+ const s=db.seats.find(x=>x.id===id);
+ const order=db.orders[id]||[];
+ const panel=buildBillingPanel({
+   title:s.name, subtitle:`${s.id} · Running order`,
+   orderKey:id, closeAction:"closeBillingWindow()",
+   general:false
+ });
+ showModal(panel);
+}
+function openGeneralBilling(){
+ const key='GENERAL';
+ if(!db.orders[key]) db.orders[key]=[];
+ save();
+ currentSeat=key;
+ showModal(buildBillingPanel({
+   title:'General Billing',
+   subtitle:'Walk-in / Takeaway · No table required',
+   orderKey:key, closeAction:"closeBillingWindow()", general:true
+ }));
+}
+function showModal(content){
+ const old=document.getElementById('billingModal'); if(old)old.remove();
+ const div=document.createElement('div'); div.id='billingModal'; div.className='modal'; div.innerHTML=`<div class="modal-card">${content}</div>`;
+ document.body.appendChild(div);
+}
+function closeBillingWindow(){const m=document.getElementById('billingModal');if(m)m.remove();currentSeat=null;render()}
+function buildBillingPanel(cfg){
+ const order=db.orders[cfg.orderKey]||[];
+ return `<div class="modal-head"><div><h2 style="margin:0">${cfg.title}</h2><div class="small">${cfg.subtitle}</div></div><button class="light closebtn" onclick="${cfg.closeAction}">✕</button></div>
+ <div class="modal-body">
+ <h3>Current Order</h3>
+ ${order.length?order.map((x,i)=>`<div class="billline"><div class="row"><b>${x.name}</b><span>${money((lineTotal(x)))}</span></div><div class="row small"><span>${x.weightKg?x.weightKg+' kg':money(x.price)+' each'}</span><span>${x.weightKg?'weight-based':'Qty: '+x.qty}</span></div></div>`).join(''):'<div class="small">No items added yet.</div>'}
+ <div class="total">Total: ${money(order.reduce((a,x)=>a+(lineTotal(x)),0))}</div>
+ <button class="primary add-items-btn" onclick="openMenuPicker('${cfg.orderKey}')">＋ ADD ITEMS</button>
+ <div class="bill-actions">
+   <button class="primary" ${order.length?'':'disabled'} onclick="bill('${cfg.orderKey}')">🧾 Generate Bill</button>
+   <button class="danger" ${order.length?'':'disabled'} onclick="clearOrderAndRefresh('${cfg.orderKey}')">Clear Order</button>
+ </div>
+ </div>`;
+}
+function openMenuPicker(key){
+ const old=document.getElementById('menuModal'); if(old)old.remove();
+ const div=document.createElement('div'); div.id='menuModal'; div.className='menu-modal';
+ div.innerHTML=`<div class="menu-card">
+   <div class="menu-head"><div><h2 style="margin:0">Add Items</h2><div class="small">${key==='GENERAL'?'General Billing':db.seats.find(x=>x.id===key)?.name||key}</div></div><button class="light closebtn" onclick="closeMenuPicker()">✕</button></div>
+   <div class="menu-body">
+    <div class="menu-search"><input id="menuSearch" placeholder="🔍 Search dishes..." oninput="renderMenuPicker('${key}')"></div>
+    <div id="menuPickerRows"></div>
+   </div>
+   <div class="menu-footer"><div><b id="pickerCount">0 items</b><div class="small" id="pickerTotal">₹0</div></div><button class="primary" onclick="closeMenuPicker()">DONE</button></div>
+ </div>`;
+ document.body.appendChild(div); renderMenuPicker(key);
+}
+function renderMenuPicker(key){
+ const q=(document.getElementById('menuSearch')?.value||'').toLowerCase();
+ const order=db.orders[key]||[];
+ const active=db.menu.filter(m=>m.active && m.name.toLowerCase().includes(q));
+ const rows=active.length?active.map(m=>{
+   const x=order.find(o=>o.menuId===m.id);
+   if(m.pricingMode==='prepWeight'){
+     const kg=x?.weightKg||0;
+     return `<div class="menu-row">
+       <div><div class="dish-name">${m.name}</div><div class="dish-price">${prepSurchargeLabel()}</div>${x?`<div class="small">${prepDisplayWeight(kg)} · ${money(prepPrice(kg))}</div>`:''}</div>
+       <div class="stepper"><button class="light" onclick="openPrepPicker('${key}','${m.id}')">⚖️ ${x?'EDIT':'ADD'}</button></div>
+       <div class="menu-delete-slot">${x?`<button class="menu-remove" onclick="pickerRemove('${key}','${m.id}')">🗑️</button>`:''}</div>
+     </div>`;
+   }
+   const qty=x?x.qty:0;
+   return `<div class="menu-row">
+     <div><div class="dish-name">${m.name}</div><div class="dish-price">${money(m.price)}</div></div>
+     <div class="stepper"><button class="light" onclick="pickerQty('${key}','${m.id}',-1)">−</button><b>${qty}</b><button class="light" onclick="pickerQty('${key}','${m.id}',1)">+</button></div>
+     <div class="menu-delete-slot">${x?`<button class="menu-remove" onclick="pickerRemove('${key}','${m.id}')">🗑️</button>`:''}</div>
+   </div>`;
+ }).join(''):'<div class="small" style="padding:15px 0">No matching active dishes.</div>';
+ document.getElementById('menuPickerRows').innerHTML=rows;
+ updatePickerSummary(key);
+}
+function openChickenPicker(key){
+ const old=document.getElementById('chickenModal');if(old)old.remove();
+ const current=(db.orders[key]||[]).find(x=>x.menuId==='custom-chicken')?.weightKg||0;
+ const d=document.createElement('div');d.id='chickenModal';d.className='chicken-modal';
+ d.innerHTML=`<div class="chicken-card">
+   <div class="row"><div><h2 style="margin:0">Customer Chicken</h2><div class="small">Enter the chicken weight the customer brought.</div></div><button class="light closebtn" onclick="closeChickenPicker()">✕</button></div>
+   <div class="weight-grid">
+     ${[0.25,0.5,0.75,1,1.25,1.5,1.75,2].map(w=>`<button class="${current===w?'primary':'light'}" onclick="setChickenWeight('${key}',${w})">${w} kg</button>`).join('')}
+   </div>
+   <label><b>Other weight (kg)</b></label>
+   <input id="customChickenWeight" type="number" min="0.01" step="0.01" placeholder="e.g. 1.35" value="${current||''}">
+   <div class="panel" style="margin:8px 0"><b id="chickenQuote">${current?money(chickenPrice(current)):'Select a weight'}</b><div class="small">Up to 1 kg is charged ₹150.</div></div>
+   <div class="bill-actions"><button class="primary" onclick="saveChickenWeight('${key}')">ADD CHICKEN</button><button class="light" onclick="closeChickenPicker()">CANCEL</button></div>
+ </div>`;
+ document.body.appendChild(d);
+ const inp=document.getElementById('customChickenWeight');
+ inp.oninput=()=>{const w=Number(inp.value);document.getElementById('chickenQuote').textContent=w>0?money(chickenPrice(w)):'Select a weight'};
+}
+function setChickenWeight(key,w){
+ const inp=document.getElementById('customChickenWeight');if(inp)inp.value=w;
+ const q=document.getElementById('chickenQuote');if(q)q.textContent=money(chickenPrice(w));
+}
+function saveChickenWeight(key){
+ const w=Number(document.getElementById('customChickenWeight')?.value);
+ if(!isFinite(w)||w<=0)return alert('Enter a valid chicken weight.');
+ const m=db.menu.find(x=>x.pricingMode==='chickenWeight');
+ const o=db.orders[key]||(db.orders[key]=[]);
+ let x=o.find(a=>a.menuId===m.id);
+ const price=chickenPrice(w);
+ if(!x)o.push(x={menuId:m.id,name:m.name,price:150,qty:1,weightKg:w});
+ else {x.weightKg=w;x.qty=1;x.price=150}
+ save();closeChickenPicker();renderMenuPicker(key);
+}
+function closeChickenPicker(){const m=document.getElementById('chickenModal');if(m)m.remove()}
+function pickerQty(key,mid,d){
+ const m=db.menu.find(x=>x.id===mid); if(!m)return;
+ const o=db.orders[key]||(db.orders[key]=[]);
+ let x=o.find(a=>a.menuId===mid);
+ if(!x && d>0){x={menuId:m.id,name:m.name,price:m.price,qty:0};o.push(x)}
+ if(x){x.qty+=d;if(x.qty<=0)o.splice(o.indexOf(x),1)}
+ if(!o.length)delete db.orders[key];
+ save();renderMenuPicker(key);
+}
+function pickerRemove(key,mid){
+ const o=db.orders[key]||[];
+ const kept=o.filter(x=>x.menuId!==mid);
+ if(kept.length)db.orders[key]=kept; else delete db.orders[key];
+ save();renderMenuPicker(key);
+}
+function updatePickerSummary(key){
+ const o=db.orders[key]||[];
+ const count=o.reduce((a,x)=>a+(x.pricingMode==='prepWeight'?1:x.qty),0), total=o.reduce((a,x)=>a+lineTotal(x),0);
+ const c=document.getElementById('pickerCount'), t=document.getElementById('pickerTotal');
+ if(c)c.textContent=`${count} item${count===1?'':'s'}`;
+ if(t)t.textContent=money(total);
+}
+function closeMenuPicker(){
+ const m=document.getElementById('menuModal');if(m)m.remove();
+ if(currentSeat)refreshBilling(currentSeat);
+}
+function refreshBilling(key){
+ const modal=document.getElementById('billingModal');
+ if(!modal)return;
+ const s=db.seats.find(x=>x.id===key);
+ const general=key==='GENERAL';
+ modal.querySelector('.modal-card').innerHTML=buildBillingPanel({
+   title:general?'General Billing':s.name,
+   subtitle:general?'Walk-in / Takeaway · No table required':`${s.id} · Running order`,
+   orderKey:key, closeAction:"closeBillingWindow()", general
+ });
+}
+function addItemTo(key,mid){
+ const m=db.menu.find(x=>x.id===mid); if(!m)return;
+ const o=db.orders[key]||(db.orders[key]=[]);
+ const found=o.find(x=>x.menuId===mid);
+ if(found)found.qty++; else o.push({menuId:m.id,name:m.name,price:m.price,qty:1});
+ save(); refreshBilling(key);
+}
+function addItem(mid){addItemTo(currentSeat,mid)}
+function changeQtyFor(key,i,d){
+ const o=db.orders[key]; if(!o)return;
+ o[i].qty+=d; if(o[i].qty<=0)o.splice(i,1);
+ if(!o.length)delete db.orders[key]; save(); refreshBilling(key);
+}
+function changeQty(i,d){changeQtyFor(currentSeat,i,d)}
+function clearOrderAndRefresh(key){
+ delete db.orders[key];
+ save();
+ refreshBilling(key);
+}
+function clearOrder(id){clearOrderAndRefresh(id)}
+function bill(id){
+ const o=db.orders[id]||[];
+ if(!o.length){ alert('No items in this order.'); return; }
+ const total=o.reduce((a,x)=>a+lineTotal(x),0);
+ openPaymentPicker(id,total);
+}
+
+function openPaymentPicker(id,total){
+ const old=document.getElementById('paymentModal'); if(old)old.remove();
+ const d=document.createElement('div');
+ d.id='paymentModal'; d.className='modal payment-modal';
+ d.innerHTML=`<div class="modal-card">
+ <div class="modal-head"><div><h2 style="margin:0">Payment</h2><div class="small">Choose payment method</div></div>
+ <button class="light closebtn" onclick="closePaymentPicker()">✕</button></div>
+ <div class="modal-body">
+ <div class="payment-total-box"><div class="small">Amount to Pay</div><div class="amount">${money(total)}</div></div>
+ <div class="payment-method-grid">
+ <button id="payCashBtn" class="payment-method-btn" onclick="selectPaymentMethod('CASH')">💵 CASH</button>
+ <button id="payUpiBtn" class="payment-method-btn" onclick="selectPaymentMethod('UPI')">📱 UPI</button>
+ </div>
+ ${db.whatsappEnabled ? `${db.whatsappQrImage ? `<button class="whatsapp-send-btn" onclick="sendBillWithQrToWhatsApp('${id}')">📱 Send Bill + QR on WhatsApp</button><div class="small" style="margin:8px 0 0">On a phone, this opens the share sheet so you can choose WhatsApp and the customer. The bill image contains your actual QR.</div>` : `<button class="whatsapp-send-btn" onclick="sendBillOnWhatsApp('${id}')">📱 Send Bill on WhatsApp</button>`}` : ''}
+ <button id="confirmPaymentBtn" class="primary payment-confirm" disabled onclick="confirmPayment('${id}')">Select Payment Method</button>
+ </div></div>`;
+ document.body.appendChild(d);
+ window._selectedPayment=null;
+ window._paymentTotal=total;
+}
+function normalizeWhatsAppNumber(raw){
+  let n=String(raw||'').replace(/\D/g,'');
+  if(n.length===10) n='91'+n;
+  return n;
+}
+function buildWhatsAppBillMessage(id){
+  const o=db.orders[id]||[];
+  const total=o.reduce((a,x)=>a+lineTotal(x),0);
+  const place=id==='GENERAL'?'General Billing':(db.seats.find(x=>x.id===id)?.name||id);
+  const rows=o.map(x=>`• ${x.name} — ${x.pricingMode==='prepWeight'?x.weightKg+' kg':'Qty '+x.qty} — ${money(lineTotal(x))}`).join('\n');
+  const payBlock=db.whatsappUpiId ? `\n\n━━━━━━━━━━━━━━━━━━\n💳 PAY NOW\n\nAmount: ${money(total)}\nUPI ID: ${db.whatsappUpiId}\n\nScan the QR sent with this bill, or open your UPI app and pay ${money(total)} to the UPI ID above.\n\nPayment reference: Bill #${db.nextBill}` : '';
+  return `Dileep Family Restaurant\nNear Kokkanti Cross\n\n🧾 Bill #${db.nextBill}\n${place}\n\n${rows}\n\n💰 TOTAL: ${money(total)}${payBlock}\n\nThank you for visiting Dileep Family Restaurant!`;
+}
+function dataUrlToFile(dataUrl,name){
+  const parts=dataUrl.split(','); const mime=(parts[0].match(/:(.*?);/)||[])[1]||'image/png';
+  const bin=atob(parts[1]); const arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  return new File([arr],name,{type:mime});
+}
+async function shareBillWithQr(id){
+  if(!db.whatsappQrImage){appNotice('QR Not Added','Add your UPI QR image in Admin → WhatsApp first.','🖼️');return;}
+  const o=db.orders[id]||[];
+  const total=o.reduce((a,x)=>a+lineTotal(x),0);
+  const place=id==='GENERAL'?'General Billing':(db.seats.find(x=>x.id===id)?.name||id);
+  const billNo=db.nextBill;
+  const rows=o.map(x=>`${x.name} — ${x.pricingMode==='prepWeight'?x.weightKg+' kg':'Qty '+x.qty} — ${money(lineTotal(x))}`);
+  try{
+    const billBlob=await createBillQrImage({billNo,place,rows,total,qrDataUrl:db.whatsappQrImage,upiId:db.whatsappUpiId||''});
+    const file=new File([billBlob],`Dileep-Bill-${billNo}-QR.png`,{type:'image/png'});
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      await navigator.share({title:`Dileep Family Restaurant Bill #${billNo}`,text:`Dileep Family Restaurant — Bill #${billNo}\nTotal: ${money(total)}\nPlease scan the QR in the attached bill image to pay.`,files:[file]});
+      return;
+    }
+    // Fallback: download the combined bill+QR image so it can be attached to WhatsApp manually.
+    const a=document.createElement('a'); a.href=URL.createObjectURL(billBlob); a.download=`Dileep-Bill-${billNo}-QR.png`; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+    appNotice('Bill + QR Ready','The combined bill image was saved. Open WhatsApp, choose the customer, attach this image, and send it.','🖼️');
+  }catch(e){
+    if(e && e.name==='AbortError') return;
+    appNotice('Share Failed','Your browser could not share the bill image. Try the download/share option instead.','⚠️');
+  }
+}
+function loadImageFromDataUrl(dataUrl){
+  return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=dataUrl;});
+}
+async function createBillQrImage({billNo,place,rows,total,qrDataUrl,upiId}){
+  const qr=await loadImageFromDataUrl(qrDataUrl);
+  const W=900, pad=54, lineH=42, qrSize=430;
+  const H=pad*2+170+(rows.length*lineH)+150+qrSize+110;
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#fffdf8';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#17324d';ctx.font='700 34px Arial';ctx.fillText('Dileep Family Restaurant',pad,68);
+  ctx.fillStyle='#5b6470';ctx.font='22px Arial';ctx.fillText('Near Kokkanti Cross',pad,103);
+  ctx.fillStyle='#17324d';ctx.font='700 26px Arial';ctx.fillText(`Bill #${billNo}  •  ${place}`,pad,150);
+  let y=198; ctx.font='22px Arial';ctx.fillStyle='#273444';
+  rows.forEach(r=>{ctx.fillText('• '+r,pad,y);y+=lineH;});
+  y+=16;ctx.font='700 30px Arial';ctx.fillStyle='#17324d';ctx.fillText(`TOTAL: ${money(total)}`,pad,y);
+  y+=62;ctx.font='700 25px Arial';ctx.fillText('SCAN TO PAY',pad,y);
+  y+=35;ctx.font='20px Arial';ctx.fillStyle='#5b6470';ctx.fillText(`Pay ${money(total)} using any UPI app`,pad,y);
+  if(upiId){y+=32;ctx.fillText(`UPI ID: ${upiId}`,pad,y);}
+  const qx=(W-qrSize)/2, qy=y+34;
+  ctx.fillStyle='#ffffff';ctx.fillRect(qx-14,qy-14,qrSize+28,qrSize+28);
+  ctx.drawImage(qr,qx,qy,qrSize,qrSize);
+  y=qy+qrSize+65;ctx.textAlign='center';ctx.font='700 22px Arial';ctx.fillStyle='#17324d';ctx.fillText('Thank you for visiting Dileep Family Restaurant!',W/2,y);ctx.textAlign='left';
+  return new Promise(resolve=>c.toBlob(resolve,'image/png'));
+}
+async function sendBillWithQrToWhatsApp(id){
+  if(!db.whatsappEnabled)return;
+  if(!db.whatsappQrImage){sendBillOnWhatsApp(id);return;}
+  const o=db.orders[id]||[];
+  const total=o.reduce((a,x)=>a+lineTotal(x),0);
+  const place=id==='GENERAL'?'General Billing':(db.seats.find(x=>x.id===id)?.name||id);
+  const billNo=db.nextBill;
+  const rows=o.map(x=>`${x.name} — ${x.pricingMode==='prepWeight'?x.weightKg+' kg':'Qty '+x.qty} — ${money(lineTotal(x))}`);
+  try{
+    const blob=await createBillQrImage({billNo,place,rows,total,qrDataUrl:db.whatsappQrImage,upiId:db.whatsappUpiId||''});
+    const file=new File([blob],`Dileep-Bill-${billNo}-QR.png`,{type:'image/png'});
+    const shareText=`Dileep Family Restaurant — Bill #${billNo}\nTotal: ${money(total)}\nPlease scan the QR in the attached bill image to pay.`;
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      await navigator.share({title:`Dileep Family Restaurant Bill #${billNo}`,text:shareText,files:[file]});
+      return;
+    }
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`Dileep-Bill-${billNo}-QR.png`; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+    appNotice('Bill + QR Ready','Your phone/browser cannot share the image directly. Open WhatsApp and attach the downloaded bill image.','🖼️');
+  }catch(e){
+    if(e && e.name==='AbortError')return;
+    appNotice('Share Failed','The QR bill could not be shared from this browser. You can download it and attach it in WhatsApp.','⚠️');
+  }
+}
+function sendBillOnWhatsApp(id){
+  if(!db.whatsappEnabled)return;
+  const old=document.getElementById('whatsappNumberDialog');
+  if(old)old.remove();
+  appInputDialog('WhatsApp Bill','Customer WhatsApp number','',(raw,ctl)=>{
+    const n=normalizeWhatsAppNumber(raw);
+    if(!n || n.length<10){ctl.error('Enter a valid WhatsApp number.');return;}
+    const msg=buildWhatsAppBillMessage(id);
+    const url='https://wa.me/'+n+'?text='+encodeURIComponent(msg);
+    window.open(url,'_blank');
+    closeAppDialog();
+    appNotice('WhatsApp Ready','The bill text is ready in WhatsApp. To send the actual scanner image, use “Send Bill + QR on WhatsApp” from the payment screen.','📱');
+  },'📱','tel');
+}
+function whatsappSettings(){
+  document.getElementById('app').innerHTML=`<div class="tabs">
+   <button class="tab light" onclick="admin()">🍽️ Menu</button>
+   <button class="tab light" onclick="adminSeats()">🪑 Seating</button>
+   <button class="tab light" onclick="sales()">📊 Sales</button>
+   <button class="tab light" onclick="prepSettings()">⚖️ Cooking Prices</button>
+   <button class="tab light" onclick="backupSettings()">💾 Backup</button>
+   <button class="tab primary">📱 WhatsApp</button>
+   <button class="tab light" onclick="render()">← Billing</button></div>
+   <div class="panel whatsapp-settings-card">
+     <div class="whatsapp-toggle-row">
+       <div><h2 style="margin:0">📱 WhatsApp Billing</h2><div class="small" style="margin-top:5px">Control whether the billing screen shows the WhatsApp bill option.</div></div>
+       <div class="switch-control">
+         <button class="switch ${db.whatsappEnabled?'on':'off'}" onclick="toggleWhatsAppBilling()" aria-label="Toggle WhatsApp Billing"><span class="knob"></span><span class="switch-label">${db.whatsappEnabled?'ON':'OFF'}</span></button>
+       </div>
+     </div>
+     <div class="whatsapp-status-note">${db.whatsappEnabled?'ON — a “Send Bill on WhatsApp” option will appear during payment.':'OFF — WhatsApp billing is completely hidden from the billing screen.'}</div>
+   </div>
+   <div class="panel">
+     <h3 style="margin-top:0">UPI Payment + QR</h3>
+     <div class="small">Add your restaurant UPI ID and upload the QR image you already use. The QR is stored in this app and can be shared with the bill from a supported phone browser.</div>
+     <div class="whatsapp-field"><label><b>Restaurant UPI ID</b></label><input id="whatsappUpiId" placeholder="e.g. restaurant@upi" value="${String(db.whatsappUpiId||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"></div>
+     <div class="qr-upload-box">
+       <label><b>UPI QR / Scanner Image</b></label>
+       <input id="whatsappQrFile" type="file" accept="image/png,image/jpeg,image/webp" onchange="previewWhatsAppQr(event)" style="margin-top:10px">
+       <div id="qrPreview" class="qr-preview">${db.whatsappQrImage ? `<img src="${db.whatsappQrImage}" alt="Restaurant UPI QR"><div><b>QR image added.</b><div class="small" style="margin-top:6px">This image will be available for “Share Bill + QR”.</div><button class="light" onclick="removeWhatsAppQr()" style="margin-top:10px">Remove QR</button></div>` : `<div class="qr-empty">No QR image added yet. Choose the scanner/QR image from your device.</div>`}</div>
+     </div>
+     <button class="primary" onclick="saveWhatsAppSettings()">Save WhatsApp Settings</button>
+   </div>
+   <div class="panel"><div class="small">Customers will receive the bill message through WhatsApp. The staff still confirms the actual payment in the billing app.</div></div>`;
+}
+function previewWhatsAppQr(ev){
+  const f=ev.target.files && ev.target.files[0]; if(!f)return;
+  if(f.size>2*1024*1024){appNotice('QR Image Too Large','Please choose a QR image under 2 MB.','🖼️');ev.target.value='';return;}
+  const r=new FileReader(); r.onload=()=>{db.whatsappQrImage=r.result; save(); whatsappSettings();}; r.readAsDataURL(f);
+}
+function removeWhatsAppQr(){
+  db.whatsappQrImage=''; save(); whatsappSettings();
+}
+function toggleWhatsAppBilling(){
+  db.whatsappEnabled=!db.whatsappEnabled; save(); whatsappSettings();
+}
+function saveWhatsAppSettings(){
+  db.whatsappUpiId=(document.getElementById('whatsappUpiId')?.value||'').trim();
+  save(); appNotice('WhatsApp Settings Saved',db.whatsappEnabled?'WhatsApp billing is ON.':'WhatsApp billing is OFF and hidden from billing.','📱');
+  whatsappSettings();
+}
+function selectPaymentMethod(method){
+ window._selectedPayment=method;
+ const cash=document.getElementById('payCashBtn'), upi=document.getElementById('payUpiBtn'), confirm=document.getElementById('confirmPaymentBtn');
+ if(cash)cash.classList.toggle('selected',method==='CASH');
+ if(upi)upi.classList.toggle('selected',method==='UPI');
+ if(confirm){confirm.disabled=false;confirm.textContent=method==='CASH'?'✓ Confirm Cash Payment':'✓ Confirm UPI Payment';}
+}
+function closePaymentPicker(){
+ const m=document.getElementById('paymentModal');if(m)m.remove();
+ window._selectedPayment=null;window._paymentTotal=null;
+}
+
+function confirmPayment(id){
+ const method=window._selectedPayment;
+ if(!method)return;
+ const o=db.orders[id]||[];
+ if(!o.length){
+   closePaymentPicker();
+   render();
+   return;
+ }
+ const total=o.reduce((a,x)=>a+lineTotal(x),0);
+
+ const billItems=o.map(x=>({...x,total:lineTotal(x)}));
+ const b={
+   no:db.nextBill++,
+   seat:id,
+   items:billItems,
+   time:new Date().toISOString(),
+   total,
+   method};
+ db.bills.push(b);
+ delete db.orders[id];
+ save();
+ closePaymentPicker();
+ showReceipt(b);
+}
+
+function receiptItemText(x){
+ if(x.pricingMode==='prepWeight') return `${x.weightKg} kg`;
+ return `Qty: ${x.qty}`;
+}
+function showReceipt(b){
+ const old=document.getElementById('receiptModal');if(old)old.remove();
+ const place=b.seat==='GENERAL'?'General Billing':b.seat;
+ const rows=b.items.map(x=>`<tr>
+   <td>${x.name}<div class="small">${receiptItemText(x)}</div></td>
+   <td class="num">${x.pricingMode==='prepWeight'?'—':x.qty}</td>
+   <td>${money(x.total)}</td>
+ </tr>`).join('');
+ const d=document.createElement('div');
+ d.id='receiptModal';d.className='modal receipt-modal';
+ d.innerHTML=`<div class="modal-card">
+   <div class="modal-head"><div><h2 style="margin:0">Final Bill</h2><div class="small">Bill #${b.no}</div></div><button class="light closebtn" onclick="closeReceipt()">✕</button></div>
+   <div class="modal-body">
+    <div class="receipt" id="printReceipt">
+      <div class="receipt-head">
+        <h1>Dileep Family Restaurant</h1>
+        <div class="small">Near Kokkanti Cross</div>
+        <div class="small">Restaurant Bill</div>
+      </div>
+      <div class="receipt-meta">
+        <div><b>Bill No:</b> #${b.no}</div>
+        <div><b>Date:</b> ${new Date(b.time).toLocaleDateString()}</div>
+        <div><b>Time:</b> ${new Date(b.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+        <div><b>Seat:</b> ${place}</div>
+      </div>
+      <table class="receipt-table">
+        <thead><tr><th>Item</th><th class="num">Qty</th><th>Amount</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="receipt-total"><span>TOTAL</span><span>${money(b.total)}</span></div>
+      <div class="receipt-payment"><span>Payment</span><b>${b.method}</b></div>
+      <div class="receipt-note">Thank you for visiting Dileep Family Restaurant!</div>
+    </div>
+    <div class="receipt-actions">
+      <button class="primary" onclick="printReceipt()">🖨️ Print Bill</button>
+      <button class="light" onclick="closeReceipt()">✓ Close Bill</button>
+    </div>
+   </div>
+ </div>`;
+ document.body.appendChild(d);
+}
+
+function printReceipt(){
+ const receipt=document.getElementById('printReceipt');
+ if(!receipt){ alert('Bill receipt is not available.'); return; }
+
+ const w=window.open('', '_blank', 'width=420,height=700');
+ if(!w){
+   alert('Printing window was blocked by the browser. Please allow pop-ups for this file.');
+   return;
+ }
+
+ const styles=`
+   *{box-sizing:border-box}
+   html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Arial,sans-serif}
+   body{padding:8px}
+   .receipt{width:80mm;max-width:80mm;margin:0 auto;padding:6px;background:#fff}
+   .receipt-head{text-align:center;border-bottom:1px dashed #777;padding-bottom:12px}
+   .receipt-head h1{font-size:20px;margin:0 0 4px}
+   .small{font-size:11px;color:#555}
+   .receipt-meta{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:12px 0;font-size:11px}
+   .receipt-table{width:100%;border-collapse:collapse;font-size:12px}
+   .receipt-table th,.receipt-table td{padding:6px 2px;border-bottom:1px solid #ddd;text-align:left}
+   .receipt-table th:last-child,.receipt-table td:last-child{text-align:right}
+   .receipt-table .num{text-align:center}
+   .receipt-total{display:flex;justify-content:space-between;font-size:18px;font-weight:800;padding-top:12px}
+   .receipt-payment{margin-top:10px;padding:8px;background:#f2f2f2;display:flex;justify-content:space-between;font-size:12px}
+   .receipt-note{text-align:center;margin-top:16px;font-size:10px;color:#666}
+   @media print{
+     @page{size:80mm auto;margin:0}
+     body{padding:0}
+     .receipt{width:80mm;max-width:80mm}
+   }
+ `;
+
+ w.document.open();
+ w.document.write(`<!doctype html><html><head><title>Bill</title><style>${styles}</style></head><body>${receipt.outerHTML}
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+</body></html>`);
+ w.document.close();
+
+ w.onload=function(){
+   w.focus();
+   setTimeout(function(){
+     w.print();
+     setTimeout(function(){w.close();},500);
+   },250);
+ };
+}
+
+function closeReceipt(){
+ const receipt=document.getElementById('receiptModal'); if(receipt)receipt.remove();
+ const payment=document.getElementById('paymentModal'); if(payment)payment.remove();
+ // Close any old billing/menu modal that was underneath the receipt.
+ document.querySelectorAll('.modal').forEach(m=>m.remove());
+ window._selectedPayment=null;
+ activeSeat=null;
+ render();
+}
+function closeAppDialog(){const d=document.getElementById('appDialog');if(d)d.remove()}
+function appInputDialog(title,label,defaultValue,onDone,icon='✏️',type='text'){
+ const old=document.getElementById('appDialog');if(old)old.remove();
+ const d=document.createElement('div');d.id='appDialog';d.className='app-dialog';
+ d.innerHTML=`<div class="app-dialog-card"><div class="app-dialog-top"><div class="app-dialog-icon">${icon}</div><h3 class="app-dialog-title">${title}</h3></div><div class="app-dialog-body"><label>${label}</label><input id="appDialogInput" type="${type}" value="${String(defaultValue??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" autocomplete="off"><div id="appDialogError" class="app-dialog-error"></div></div><div class="app-dialog-actions"><button class="dialog-cancel" onclick="closeAppDialog()">Cancel</button><button class="dialog-primary" id="appDialogOk">Continue</button></div></div>`;
+ document.body.appendChild(d);
+ const input=d.querySelector('#appDialogInput');input.focus();input.select();
+ const finish=()=>{const v=input.value;onDone(v,{error:(msg)=>{d.querySelector('#appDialogError').textContent=msg;input.focus();}})};
+ d.querySelector('#appDialogOk').onclick=finish;input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();finish()}if(e.key==='Escape'){e.preventDefault();closeAppDialog()}});
+ d.addEventListener('click',e=>{if(e.target===d)closeAppDialog()});
+}
+function appNotice(title,message,icon='ℹ️'){
+ const old=document.getElementById('appDialog');if(old)old.remove();
+ const d=document.createElement('div');d.id='appDialog';d.className='app-dialog';
+ d.innerHTML=`<div class="app-dialog-card"><div class="app-dialog-top"><div class="app-dialog-icon">${icon}</div><h3 class="app-dialog-title">${title}</h3></div><div class="app-dialog-body"><div style="font-size:14px;line-height:1.5;color:#444">${message}</div></div><div class="app-dialog-actions"><button class="dialog-primary" id="appDialogOk">OK</button></div></div>`;
+ document.body.appendChild(d);d.querySelector('#appDialogOk').onclick=closeAppDialog;d.querySelector('#appDialogOk').focus();
+}
+function appConfirm(title,message,onYes,icon='⚠️'){
+ const old=document.getElementById('appDialog');if(old)old.remove();
+ const d=document.createElement('div');d.id='appDialog';d.className='app-dialog';
+ d.innerHTML=`<div class="app-dialog-card"><div class="app-dialog-top"><div class="app-dialog-icon">${icon}</div><h3 class="app-dialog-title">${title}</h3></div><div class="app-dialog-body"><div style="font-size:14px;line-height:1.5;color:#444">${message}</div></div><div class="app-dialog-actions"><button class="dialog-cancel" onclick="closeAppDialog()">Cancel</button><button class="dialog-primary" id="appDialogYes">Continue</button></div></div>`;
+ document.body.appendChild(d);d.querySelector('#appDialogYes').onclick=()=>{closeAppDialog();onYes()};d.querySelector('#appDialogYes').focus();
+}
+function openAdmin(){
+ appInputDialog('Admin Access','Enter Admin PIN','',(pin,ctl)=>{if(pin!==db.adminPin){ctl.error('Incorrect PIN. Please try again.');return}closeAppDialog();sales()},'🔐','password');
+}
+function admin(){
+ document.getElementById('app').innerHTML=`
+ <div class="tabs"><button class="tab primary" onclick="admin()">🍽️ Menu</button><button class="tab light" onclick="adminSeats()">🪑 Seating</button><button class="tab light" onclick="sales()">📊 Sales</button><button class="tab light" onclick="prepSettings()">⚖️ Cooking Prices</button><button class="tab light" onclick="backupSettings()">💾 Backup</button><button class="tab light" onclick="whatsappSettings()">📱 WhatsApp</button><button class="tab light" onclick="render()">← Billing</button></div>
+ <div class="panel admin-security-card"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h2 style="margin:0">🔐 Admin Security</h2><div class="small" style="margin-top:4px">Change the PIN used to enter Admin.</div></div><button class="light" onclick="changePin()">🔑 Change PIN</button></div></div>
+ <div class="panel"><h2>Menu Management</h2><div class="small">Add, edit, disable or remove dishes. Existing bills keep their original prices. Customer Chicken uses the special weight-based pricing.</div>
+ <div class="menu-order-note">↕️ <span><b>Arrange menu order</b> — use the handle to drag dishes into the order you want. The same order will appear in Add Items.</span></div>
+ <div class="menu-admin-list" id="menuAdminList">${db.menu.map((m,i)=>`<div class="menu-admin-item" draggable="true" data-menu-id="${m.id}" ondragstart="menuDragStart(event,'${m.id}')" ondragover="menuDragOver(event)" ondrop="menuDrop(event,'${m.id}')" ondragend="menuDragEnd(event)">
+   <div class="menu-admin-main">
+    <div class="menu-drag-handle" draggable="true" ondragstart="menuDragStart(event,'${m.id}')" title="Drag to reorder">☷</div>
+    <div class="menu-admin-info"><b>${m.name}</b><div class="small">${m.pricingMode==='prepWeight'?'Weight pricing · '+prepSurchargeLabel():money(m.price)+' · '+(m.category||'General')} · ${m.active?'Active':'Disabled'}</div></div>
+    <div class="menu-admin-actions"><button class="light" onclick="editDish('${m.id}')">✏️</button><button class="light" onclick="toggleDish('${m.id}')">${m.active?'⏸':'▶️'}</button><button class="danger" onclick="deleteDish('${m.id}')">🗑️</button></div>
+   </div>
+  </div>`).join('')}</div>
+ <button class="primary" style="margin-top:14px" onclick="addDish()">+ Add Dish</button></div>
+ `;
+}
+function addDish(){
+ appInputDialog('Add Dish','Dish name','',(name,c1)=>{
+  name=name.trim();if(!name){c1.error('Please enter a dish name.');return}
+  closeAppDialog();
+  appInputDialog('Set Price','Price (₹)','',(price,c2)=>{const p=Number(price);if(price.trim()===''||!isFinite(p)||p<0){c2.error('Enter a valid price.');return}closeAppDialog();appInputDialog('Choose Category','Category','General',(category,c3)=>{category=(category.trim()||'General');closeAppDialog();db.menu.push({id:'m'+Date.now(),name,price:p,active:true,category});save();admin()},'🏷️');},'₹');
+ },'🍽️');
+}
+function editDish(id){
+ const m=db.menu.find(x=>x.id===id); if(!m)return;
+ appInputDialog('Edit Dish','Dish name',m.name,(n,c1)=>{n=n.trim();if(!n){c1.error('Dish name cannot be empty.');return}m.name=n;closeAppDialog();
+  if(m.pricingMode!=='chickenWeight'){
+   appInputDialog('Edit Price','Price (₹)',m.price,(p,c2)=>{if(p.trim()!==''&&isFinite(Number(p))&&Number(p)>=0)m.price=Number(p);else{c2.error('Enter a valid price.');return}closeAppDialog();appInputDialog('Edit Category','Category',m.category||'General',(c,c3)=>{if(c.trim())m.category=c.trim();closeAppDialog();save();admin()},'🏷️');},'₹');
+  }else{
+   closeAppDialog();appNotice('Weight-Based Item','Customer Chicken uses weight-based pricing. Its base price is controlled in Cooking Prices.','⚖️');m.price=150;save();admin();
+  }
+ },'🍽️');
+}
+
+let menuDragId=null;
+function menuDragStart(e,id){
+ menuDragId=id;
+ const row=e.currentTarget.closest('.menu-admin-item');
+ if(row)row.classList.add('dragging');
+ if(e.dataTransfer){e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',id);}
+}
+function menuDragOver(e){
+ e.preventDefault();
+ if(e.dataTransfer)e.dataTransfer.dropEffect='move';
+ document.querySelectorAll('.menu-admin-item').forEach(x=>x.classList.remove('drag-over'));
+ const row=e.currentTarget.closest('.menu-admin-item');
+ if(row && row.dataset.menuId!==menuDragId)row.classList.add('drag-over');
+}
+function menuDrop(e,targetId){
+ e.preventDefault();
+ const fromId=menuDragId || e.dataTransfer?.getData('text/plain');
+ if(!fromId || fromId===targetId)return menuDragEnd(e);
+ const from=db.menu.findIndex(m=>m.id===fromId), to=db.menu.findIndex(m=>m.id===targetId);
+ if(from<0 || to<0)return menuDragEnd(e);
+ const [item]=db.menu.splice(from,1);
+ db.menu.splice(to,0,item);
+ save();
+ menuDragId=null;
+ admin();
+}
+function menuDragEnd(){
+ menuDragId=null;
+ document.querySelectorAll('.menu-admin-item').forEach(x=>x.classList.remove('dragging','drag-over'));
+}
+
+function toggleDish(id){const m=db.menu.find(x=>x.id===id);m.active=!m.active;save();admin()}
+function deleteDish(id){appConfirm('Delete Dish','Delete this dish from the menu? Existing bills will remain unchanged.',()=>{db.menu=db.menu.filter(x=>x.id!==id);save();admin()},'🗑️')}
+function changePin(){appInputDialog('Change Admin PIN','New Admin PIN','',(p,ctl)=>{if(!p||p.length<4){ctl.error('Use at least 4 digits/characters.');return}db.adminPin=p;save();closeAppDialog();appNotice('PIN Updated','Your Admin PIN has been changed successfully.','🔐')},'🔐','password')}
+function backupSettings(){
+ document.getElementById('app').innerHTML=`<div class="tabs">
+ <button class="tab light" onclick="admin()">🍽️ Menu</button>
+ <button class="tab light" onclick="adminSeats()">🪑 Seating</button>
+ <button class="tab light" onclick="sales()">📊 Sales</button>
+ <button class="tab light" onclick="prepSettings()">⚖️ Cooking Prices</button>
+ <button class="tab primary">💾 Backup</button>
+ <button class="tab light" onclick="render()">← Billing</button></div>
+ <div class="panel"><h2>Backup & Restore</h2>
+ <div class="small">Save a copy of your restaurant data and restore it later if needed.</div>
+ <button class="primary" style="margin-top:14px;width:100%" onclick="exportBackup()">💾 Download Backup</button>
+ <button class="light" style="margin-top:10px;width:100%" onclick="document.getElementById('restoreFile').click()">📥 Restore Backup</button>
+ <input id="restoreFile" type="file" accept="application/json,.json" style="display:none" onchange="restoreBackup(this)">
+ <div class="small" style="margin-top:12px">Backup includes menu, seating, cooking prices, Admin PIN, open orders, completed bills and bill number.</div>
+ <div class="panel" style="margin-top:12px"><b>Tip</b><div class="small" style="margin-top:6px">Keep the backup file somewhere safe. Make a fresh backup regularly, especially before changing devices or resetting the browser.</div></div>
+ </div>`;
+}
+function exportBackup(){
+ const backup={
+  backupType:'Dileep Family Restaurant Billing Backup',
+  version:1,
+  exportedAt:new Date().toISOString(),
+  data:db
+ };
+ const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+ a.href=url;a.download=`dileep-family-restaurant-backup-${stamp}.json`;
+ document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ alert('Backup downloaded successfully.');
+}
+function restoreBackup(input){
+ const file=input.files&&input.files[0];
+ if(!file)return;
+ const reader=new FileReader();
+ reader.onload=function(){
+  try{
+   const backup=JSON.parse(reader.result);
+   const data=backup&&backup.data;
+   if(!data||!Array.isArray(data.menu)||!Array.isArray(data.seats)||!Array.isArray(data.bills)||!data.orders||!data.prepPricing||typeof data.adminPin!=='string'){
+    throw new Error('Invalid backup format');
+   }
+   if(!confirm('Restore this backup? Current app data will be replaced by the backup.')){input.value='';return;}
+   db=data;
+   save();
+   input.value='';
+   alert('Backup restored successfully.');
+   sales();
+  }catch(e){
+   input.value='';
+   alert('Could not restore this file. Please select a valid Dileep Family Restaurant backup.');
+  }
+ };
+ reader.readAsText(file);
+}
+function adminSeats(){
+ document.getElementById('app').innerHTML=`<div class="tabs"><button class="tab light" onclick="admin()">🍽️ Menu</button><button class="tab primary">🪑 Seating</button><button class="tab light" onclick="sales()">📊 Sales</button><button class="tab light" onclick="prepSettings()">⚖️ Cooking Prices</button><button class="tab light" onclick="backupSettings()">💾 Backup</button><button class="tab light" onclick="whatsappSettings()">📱 WhatsApp</button><button class="tab light" onclick="render()">← Billing</button></div>
+ <div class="panel"><h2>Seating Management</h2><div class="small">Hold and drag a hut/table onto another position to reorder the layout. The spaces are fixed automatically based on the number of seatings. The saved order is reflected on the main Billing screen.</div>
+ <div class="seating-editor-note">🖐️ <b>Drag & drop:</b> hold a hut/table and move it. Drop it before/after another seating and the other seatings automatically shift to the next space.</div>
+ <div class="grid seating-editor-grid">${db.seats.map(s=>{
+   const order=db.orders[s.id]||[];
+   const total=order.reduce((a,x)=>a+lineTotal(x),0);
+   return `<div class="seat ${order.length?'active':''}" data-seat-id="${s.id}" onpointerdown="seatPointerDown(event,'${s.id}',false)">
+     <div class="name">${s.id}</div><div class="type">${s.name}</div>
+     ${order.length?`<div class="status occupied">🔴 OCCUPIED</div><div class="running">Running total: ${money(total)}</div>`:`<div class="status available">🟢 AVAILABLE</div>`}
+   </div>`;
+ }).join('')}</div>
+ <div class="row" style="margin-top:14px;flex-wrap:wrap"><button class="primary" onclick="addSeat()">+ Add Seating</button><button class="light" onclick="resetSeatLayout()">↺ Reset Order</button></div>
+ <div class="seating-admin-list">${db.seats.map(s=>`<div class="admin-item"><div class="row"><div><b>${s.id}</b> — ${s.name}</div><div><button class="light" onclick="editSeat('${s.id}')">✏️</button><button class="danger" onclick="deleteSeat('${s.id}')">🗑️</button></div></div></div>`).join('')}</div></div>`;
+}
+function addSeat(){appInputDialog('Add Seating','Short ID, e.g. H7','',(id,c1)=>{id=id.trim();if(!id){c1.error('Please enter a short ID.');return}if(db.seats.some(x=>x.id.toLowerCase()===id.toLowerCase())){c1.error('That seating ID already exists.');return}closeAppDialog();appInputDialog('Seating Name','Display name',id,(name,c2)=>{name=name.trim();if(!name){c2.error('Please enter a display name.');return}closeAppDialog();db.seats.push({id,name,type:'Other'});save();adminSeats()},'🪑')},'🪑')}
+function editSeat(id){const s=db.seats.find(x=>x.id===id);if(!s)return;appInputDialog('Edit Seating','Display name',s.name,(n,c)=>{n=n.trim();if(!n){c.error('Display name cannot be empty.');return}s.name=n;save();closeAppDialog();adminSeats()},'🪑')}
+function deleteSeat(id){if(db.orders[id])return appNotice('Seating Is Occupied','This seating has an open order. Close the bill first.','🔴');appConfirm('Remove Seating','Remove this seating from the restaurant layout?',()=>{db.seats=db.seats.filter(x=>x.id!==id);save();adminSeats()},'🗑️')}
+function prepSettings(){
+ document.getElementById('app').innerHTML=`<div class="tabs"><button class="tab light" onclick="admin()">🍽️ Menu</button><button class="tab light" onclick="adminSeats()">🪑 Seating</button><button class="tab primary">⚖️ Cooking Prices</button><button class="tab light" onclick="sales()">📊 Sales</button><button class="tab light" onclick="render()">← Billing</button></div>
+ <div class="panel"><h2>Customer Cooking Prices</h2><div class="small">These prices apply to Customer Chicken, Customer Mutton and Customer Fish.</div>
+ <div class="formgrid" style="margin-top:12px">
+  <div><label>Price per whole kg (₹)</label><input id="prepBase" type="number" min="0" value="${db.prepPricing.basePerKg}"></div>
+  <div><label>½ kg surcharge (₹)</label><input id="prepHalf" type="number" min="0" value="${db.prepPricing.halfSurcharge}"></div>
+  <div><label>¾ kg surcharge (₹)</label><input id="prepThree" type="number" min="0" value="${db.prepPricing.threeQuarterSurcharge}"></div>
+ </div>
+ <div class="panel" style="margin-top:12px"><b>How billing works</b><div class="small" style="margin-top:6px">1 kg = base price. 2 kg = 2 × base. 2¼ kg and 2½ kg = 2 × base + ½-kg surcharge. 2¾ kg = 2 × base + ¾-kg surcharge. 1¼ kg is charged like 1½ kg. This same rule applies to Chicken, Mutton and Fish.</div></div>
+ <button class="primary" onclick="savePrepSettings()">Save Cooking Prices</button></div>`;
+}
+function savePrepSettings(){
+ const base=Number(document.getElementById('prepBase').value), half=Number(document.getElementById('prepHalf').value), three=Number(document.getElementById('prepThree').value);
+ if([base,half,three].some(v=>!isFinite(v)||v<0))return alert('Enter valid non-negative prices.');
+ db.prepPricing={basePerKg:base,halfSurcharge:half,threeQuarterSurcharge:three};
+ db.menu.filter(m=>m.pricingMode==='prepWeight').forEach(m=>m.price=base);
+ save();alert('Cooking prices updated.');prepSettings();
+}
+function sales(){
+ const today=new Date().toISOString().slice(0,10);
+ const selected=window._salesDate||today;
+ const dayBills=db.bills.filter(b=>new Date(b.time).toISOString().slice(0,10)===selected);
+ const total=dayBills.reduce((a,b)=>a+b.total,0);
+ const cash=dayBills.filter(b=>b.method==='CASH').reduce((a,b)=>a+b.total,0);
+ const upi=dayBills.filter(b=>b.method==='UPI').reduce((a,b)=>a+b.total,0);
+ const displayDate=new Date(selected+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+
+ document.getElementById('app').innerHTML=`<div class="tabs">
+ <button class="tab light" onclick="admin()">🍽️ Menu</button>
+ <button class="tab light" onclick="adminSeats()">🪑 Seating</button>
+ <button class="tab primary">📊 Sales</button>
+ <button class="tab light" onclick="prepSettings()">⚖️ Cooking Prices</button>
+ <button class="tab light" onclick="backupSettings()">💾 Backup</button>
+ <button class="tab light" onclick="whatsappSettings()">📱 WhatsApp</button>
+ <button class="tab light" onclick="render()">← Billing</button></div>
+
+ <div class="sales-page">
+   <section class="sales-hero">
+    <div class="sales-hero-head">
+      <div><div class="sales-kicker">Daily Report</div><h2>Sales Overview</h2><div class="small">Completed bills and payment totals for the selected date.</div></div>
+      <div style="font-size:28px;position:relative;z-index:1">📊</div>
+    </div>
+    <div class="sales-date-row">
+      <div class="sales-date-field"><label>Date</label><input type="date" value="${selected}" onchange="window._salesDate=this.value;sales()"></div>
+      <button class="sales-today" onclick="window._salesDate='${today}';sales()">Today</button>
+    </div>
+   </section>
+
+   <section class="sales-summary">
+    <div class="sales-card"><div class="sales-card-icon">🧾</div><div class="sales-card-value">${dayBills.length}</div><div class="sales-card-label">Bills</div></div>
+    <div class="sales-card total"><div class="sales-card-icon">💰</div><div class="sales-card-value">${money(total)}</div><div class="sales-card-label">Total sales</div></div>
+    <div class="sales-card cash"><div class="sales-card-icon">💵</div><div class="sales-card-value">${money(cash)}</div><div class="sales-card-label">Cash</div></div>
+    <div class="sales-card upi"><div class="sales-card-icon">📱</div><div class="sales-card-value">${money(upi)}</div><div class="sales-card-label">UPI</div></div>
+   </section>
+
+   <section class="sales-list">
+    <div class="sales-list-head"><h3>Bills for ${displayDate}</h3><span class="sales-count">${dayBills.length} bill${dayBills.length===1?'':'s'}</span></div>
+    ${dayBills.slice().reverse().map(b=>`<div class="sales-bill"><div class="row">
+      <div><div class="seat-name">#${b.no} · ${b.seat==='GENERAL'?'General Billing':b.seat}</div>
+      <div class="small">${new Date(b.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}<span class="sales-method">${b.method}</span></div></div>
+      <div class="amount">${money(b.total)}</div></div></div>`).join('')||'<div class="sales-empty">No completed bills for this date.</div>'}
+   </section>
+ </div>`;
+}
+render();
+</script>
+</body>
+</html>
